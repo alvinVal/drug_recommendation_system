@@ -6,7 +6,7 @@ from recommender import get_alternative_drugs  # Importing recommender function
 
 # Initialize Dash app
 app = dash.Dash(__name__)
-server = app.server  # Required for Render deployment
+server = app.server # Required for Render deployment
 
 # Set layout from external module
 app.layout = layout.create_layout()
@@ -25,4 +25,4 @@ def update_recommendations(drug_name, criteria):
 
 # Run the app
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)
