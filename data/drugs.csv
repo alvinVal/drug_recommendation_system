@@ -1,0 +1,16 @@
+Drug,Therapeutic Class,Side Effects
+Ibuprofen,NSAID,Nausea
+Aspirin,NSAID,Nausea
+Paracetamol,Analgesic,Rash
+Naproxen,NSAID,Dizziness
+Diclofenac,NSAID,Dizziness
+Amoxicillin,Antibiotic,Diarrhea
+Azithromycin,Antibiotic,Nausea
+Ciprofloxacin,Antibiotic,Headache
+Metformin,Antidiabetic,Diarrhea
+Glibenclamide,Antidiabetic,Hypoglycemia
+Loratadine,Antihistamine,Drowsiness
+Cetirizine,Antihistamine,Drowsiness
+Fexofenadine,Antihistamine,Headache
+Omeprazole,Proton Pump Inhibitor,Headache
+Ranitidine,Proton Pump Inhibitor,Nausea
