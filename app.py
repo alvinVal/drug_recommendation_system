@@ -16,11 +16,6 @@ df["Drug Name"] = df["Drug Name"].str.lower()
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
-# Add CSS for smoother transitions
-app.css.append_css({
-    'external_url': 'https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css'
-})
-
 # Enable loading states
 app.config.suppress_callback_exceptions = True
 
