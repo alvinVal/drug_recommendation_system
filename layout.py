@@ -49,6 +49,45 @@ def create_layout():
                         className="mb-4 d-flex justify-content-center flex-wrap",
                         style={'gap': '10px'}
                     ),
+                    html.H4("Filter Options", className="text-center mt-4 mb-3"),
+                    
+                    # Price Range Filter with Explanation
+                    dbc.Row([
+                        dbc.Col([
+                            html.H5("Price Range", className="text-center"),
+                            html.P(
+                                "Adjust the slider to show only drugs within your preferred price range. "
+                                "The range automatically adapts to available options.",
+                                className="small text-muted text-center mb-2"
+                            ),
+                            dcc.RangeSlider(
+                                id="price-range-slider",
+                                min=0,
+                                max=2000,
+                                step=10,
+                                value=[0, 2000],
+                                marks={i: str(i) for i in range(0, 2001, 500)},
+                                tooltip={"placement": "bottom", "always_visible": True}
+                            )
+                        ], width=6),
+                        
+                        # Side Effects Filter with Explanation
+                        dbc.Col([
+                            html.H5("Filter by Side Effects", className="text-center"),
+                            html.P(
+                                "All side effects are pre-checked. Uncheck any you want to AVOID in recommendations. "
+                                "Drugs with unchecked effects will be hidden.",
+                                className="small text-muted text-center mb-2"
+                            ),
+                            dcc.Checklist(
+                                id="side-effects-checklist",
+                                options=[],
+                                value=[],
+                                style={'overflowY': 'auto', 'maxHeight': '150px'},
+                                labelStyle={'display': 'block'}
+                            )
+                        ], width=6)
+                    ]),
                     dbc.Row(
                         className="mt-4",
                         style={'flexWrap': 'nowrap'},

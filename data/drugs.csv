@@ -1,16 +1,16 @@
-Drug,Therapeutic Class,Side Effects
-Ibuprofen,NSAID,Nausea
-Aspirin,NSAID,Nausea
-Paracetamol,Analgesic,Rash
-Naproxen,NSAID,Dizziness
-Diclofenac,NSAID,Dizziness
-Amoxicillin,Antibiotic,Diarrhea
-Azithromycin,Antibiotic,Nausea
-Ciprofloxacin,Antibiotic,Headache
-Metformin,Antidiabetic,Diarrhea
-Glibenclamide,Antidiabetic,Hypoglycemia
-Loratadine,Antihistamine,Drowsiness
-Cetirizine,Antihistamine,Drowsiness
-Fexofenadine,Antihistamine,Headache
-Omeprazole,Proton Pump Inhibitor,Headache
-Ranitidine,Proton Pump Inhibitor,Nausea
+Drug Name,Therapeutic Class,SideEffect1,SideEffect2,SideEffect3,SideEffect4,SideEffect5,SideEffect6,SideEffect7,SideEffect8,SideEffect9,SideEffect10,Price
+Ibuprofen,NSAID,Heartburn,Nausea,Vomiting,Bloating,Gas,Diarrhea,Constipation,Dizziness,Headache,Rash,375
+Aspirin,NSAID,Nausea,Vomiting,Stomach pain,Heartburn,Bleeding risk,,,,,,301
+Paracetamol,Analgesic,Nausea,Vomiting,Sweating,Itching,Rash,Dizziness,Confusion,Liver damage,Anaphylactic reactions,,2.75
+Naproxen,NSAID,Heartburn,Stomach pain,Nausea,Headache,Dizziness,Drowsiness,Swelling,,,,1670
+Diclofenac,NSAID,Nausea,Vomiting,Stomach pain,Heartburn,Gas,Diarrhea,Constipation,Dizziness,Headache,Drowsiness,1671
+Amlodipine,Calcium Channel Blocker,Headache,Swelling of lower extremities,,,,,,,,,0.5
+Atorvastatin,Statin,Headache,Nausea,Vomiting,Diarrhea,Abdominal pain,Muscle pain,,,,,50
+Metformin,Biguanide (Antidiabetic),Nausea,Vomiting,Stomach upset,Diarrhea,Weakness,Metallic taste,,,,,30
+Simvastatin,Statin,Headache,Nausea,Vomiting,Diarrhea,Abdominal pain,Muscle pain,,,,,30
+Losartan,Angiotensin II Receptor Blocker,Dizziness,Back pain,Cold-like symptoms,Fatigue,,,,,,,40
+Omeprazole,Proton Pump Inhibitor,Headache,Abdominal pain,Nausea,Diarrhea,Vomiting,Flatulence,,,,,35
+Levothyroxine,Thyroid Hormone,Chest pain,Increased heart rate,Excessive sweating,Heat intolerance,,,,,,,25
+Azithromycin,Macrolide Antibiotic,Loose stools,Nausea,Stomach pain,Vomiting,Abnormal liver tests,Abnormal heartbeats,,,,,4
+Sertraline,SSRI (Selective Serotonin Reuptake Inhibitor),Nausea,Diarrhea,Dizziness,Dry mouth,Loss of appetite,Increased sweating,,,,,143.3
+Amoxicillin,Penicillin Antibiotic,Nausea,Vomiting,Diarrhea,Rash,Allergic reactions,,,,,,1.75
