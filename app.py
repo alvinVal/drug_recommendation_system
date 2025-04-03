@@ -118,6 +118,34 @@ def update_input(n_clicks, button_ids):
     return no_update
 
 @app.callback(
+    Output("current-drug-price", "children"),
+    Input("drug-input", "value"),
+    prevent_initial_call=True
+)
+def update_current_drug_price(drug_name):
+    if not drug_name:
+        return ""
+    
+    drug_lower = drug_name.lower()
+    drug_row = df[df["Drug Name"] == drug_lower]
+    
+    if drug_row.empty:
+        return html.Span("Drug Price: Not available", style={'color': 'red'})
+    
+    price = drug_row.iloc[0]['Price']
+    return html.Span([
+        "Drug Price: ",
+        html.Span(
+            f"₱{price:,.2f}",  # Philippine Peso symbol with comma formatting
+            style={
+                'color': 'darkred',
+                'fontWeight': 'bolder',
+                'fontSize': '1.2rem'
+            }
+        )
+    ])
+
+@app.callback(
     Output("recommended-drugs", "children", allow_duplicate=True),
     [Input("side-effects-checklist", "value"),
      Input("price-range-slider", "value")],

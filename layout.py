@@ -54,22 +54,41 @@ def create_layout():
                     # Price Range Filter with Explanation
                     dbc.Row([
                         dbc.Col([
-                            html.H5("Price Range", className="text-center"),
-                            html.P(
-                                "Adjust the slider to show only drugs within your preferred price range. "
-                                "The range automatically adapts to available options.",
-                                className="small text-muted text-center mb-2"
-                            ),
-                            dcc.RangeSlider(
-                                id="price-range-slider",
-                                min=0,
-                                max=2000,
-                                step=10,
-                                value=[0, 2000],
-                                marks={i: str(i) for i in range(0, 2001, 500)},
-                                tooltip={"placement": "bottom", "always_visible": True}
-                            )
-                        ], width=6),
+                                html.H5("Price Range", className="text-center"),
+                                html.P(
+                                    "Adjust the slider to show only drugs within your preferred price range. "
+                                    "The range automatically adapts to available options.",
+                                    className="small text-muted text-center mb-2"
+                                ),
+                                dcc.RangeSlider(
+                                    id="price-range-slider",
+                                    min=0,
+                                    max=2000,
+                                    step=10,
+                                    value=[0, 2000],
+                                    marks={i: str(i) for i in range(0, 2001, 500)},
+                                    tooltip={"placement": "bottom", "always_visible": True}
+                                ),
+                                # Current drug price display - Centered with PHP symbol
+                                html.Div(
+                                    html.Div(
+                                        id="current-drug-price",
+                                        className="p-2",
+                                        style={
+                                            'fontWeight': 'bold',
+                                            'color': 'red',
+                                            'fontSize': '1.1rem',
+                                            'backgroundColor': '#d6eaf8',
+                                            'borderRadius': '5px',
+                                            'border': '1px solid #2980b9',
+                                            'display': 'inline-block',
+                                            'marginTop': '30px'
+                                        }
+                                    ),
+                                    className="text-center",
+                                    style={'width': '100%'}
+                                )
+                            ], width=6),
                         
                         # Side Effects Filter with Explanation
                         dbc.Col([
