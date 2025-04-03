@@ -1,29 +1,37 @@
-# placeholder for recommender system
+# recommender.py
 import pandas as pd
 
-# Load drug dataset, sample file is in data/drugs.csv
+# Load the dataset
 df = pd.read_csv("data/drugs.csv")
+df["Drug"] = df["Drug"].astype(str).str.lower()  # Normalize for case-insensitive matching
 
 def get_alternative_drugs(drug_name, criteria="therapeutic effects"):
-    """
-    Returns a list of alternative drugs based on the specified criteria.
-    :param drug_name: Name of the drug to find alternatives for.
-    :param criteria: Criteria for recommendations (e.g., 'therapeutic effects', 'side effects').
-    :return: List of recommended alternative drugs.
-    """
+    """Returns a list of alternative drugs based on the given criteria."""
+    
+    # Ensure lowercase for consistent comparison
+    drug_name = drug_name.lower()
+
     if drug_name not in df["Drug"].values:
         return ["Drug not found in database."]
-    
-    # Find the therapeutic class of the given drug
-    drug_row = df[df["Drug"] == drug_name]
+
+    # Get the row for the input drug
+    drug_row = df[df["Drug"] == drug_name].iloc[0]
+
+    # Select the correct column for recommendations
     if criteria == "therapeutic effects":
-        class_match = df[df["Therapeutic Class"] == drug_row["Therapeutic Class"].values[0]]
+        key = "Therapeutic Class"
     elif criteria == "side effects":
-        class_match = df[df["Side Effects"] == drug_row["Side Effects"].values[0]]
+        key = "Side Effects"
     else:
-        class_match = df  # Default to all
-    
-    recommendations = class_match["Drug"].tolist()
-    recommendations.remove(drug_name)  # Remove the input drug from recommendations
-    
-    return recommendations[:5]  # Return top 5 recommendations
+        return ["Invalid criteria."]
+
+    # Get similar drugs based on the selected criterion
+    if pd.isna(drug_row[key]):
+        return ["No alternatives found based on this criterion."]
+
+    similar_drugs = df[df[key] == drug_row[key]]["Drug"].unique().tolist()
+
+    # Remove the queried drug from recommendations
+    similar_drugs = [drug for drug in similar_drugs if drug != drug_name]
+
+    return similar_drugs if similar_drugs else ["No alternatives found."]

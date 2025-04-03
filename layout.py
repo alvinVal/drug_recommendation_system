@@ -1,90 +1,101 @@
 from dash import html, dcc
+import dash_bootstrap_components as dbc
 
 def create_layout():
-    return html.Div(style={
-        'font-family': 'Arial, sans-serif',
-        'backgroundColor': '#f4f4f9',
-        'padding': '20px'
-    }, children=[
-        html.Div(style={
-            'maxWidth': '800px',
-            'margin': 'auto',
-            'backgroundColor': '#ffffff',
-            'padding': '20px',
-            'borderRadius': '8px',
-            'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'
-        }, children=[
-            html.H1("Drug Recommendation System", style={
-                'color': '#2c3e50',
-                'font-family': 'Georgia, serif',
-                'fontSize': '36px',
-                'textAlign': 'center',
-                'marginBottom': '10px'
-            }),
-            html.P("Enter a drug name below to receive alternative recommendations based on therapeutic effects or side effects.", style={
-                'textAlign': 'center',
-                'fontSize': '16px',
-                'color': '#7f8c8d',
-                'marginBottom': '30px'
-            }),
-            html.Div([
-                dcc.Input(
-                    id="drug-input",
-                    type="text",
-                    placeholder="Enter drug name...",
-                    style={
-                        'width': '100%',
-                        'padding': '10px',
-                        'fontSize': '16px',
-                        'border': '1px solid #bdc3c7',
-                        'borderRadius': '4px'
-                    }
-                ),
-                dcc.Dropdown(
-                    id="suggestions-dropdown",
-                    placeholder="Suggested drugs will appear here...",
-                    style={
-                        'width': '100%',
-                        'marginTop': '10px',
-                        'fontSize': '16px'
-                    }
-                ),
-            ], style={'marginBottom': '20px'}),
-            html.Div(id="output-container", style={
-                'backgroundColor': '#ecf0f1',
-                'padding': '15px',
-                'borderRadius': '4px',
-                'marginBottom': '20px'
-            }),
-            html.Div([
-                html.Div([
-                    html.H3("Therapeutic Effects", style={
-                        'color': '#2980b9',
-                        'borderBottom': '2px solid #2980b9',
-                        'paddingBottom': '5px',
-                        'marginBottom': '10px'
-                    }),
-                    html.Div(id="therapeutic-effects", style={
-                        'backgroundColor': '#d6eaf8',
-                        'padding': '10px',
-                        'borderRadius': '4px',
-                        'minHeight': '100px'
-                    })
-                ], style={'width': '48%', 'display': 'inline-block', 'verticalAlign': 'top'}),
-                html.Div([
-                    html.H3("Side Effects", style={
-                        'color': '#c0392b',
-                        'borderBottom': '2px solid #c0392b',
-                        'paddingBottom': '5px',
-                        'marginBottom': '10px'
-                    }),
-                    html.Div(id="side-effects", style={
-                        'backgroundColor': '#fadbd8',
-                        'padding': '10px',
-                        'borderRadius': '4px',
-                        'minHeight': '100px'
-                    })
-                ], style={'width': '48%', 'display': 'inline-block', 'marginLeft': '4%', 'verticalAlign': 'top'})
-            ])
-        ])
-    ])
+    return dbc.Container(
+        fluid=True,
+        className="d-flex align-items-center justify-content-center vh-100",
+        children=[
+            dbc.Container(
+                fluid=False,
+                style={'maxWidth': '900px', 'padding': '20px'},
+                children=[
+                    html.H1(
+                        "Drug Recommendation System",
+                        className="text-center mb-4",
+                        style={'color': '#2c3e50', 'fontFamily': 'Georgia, serif', 'fontWeight': 'bold'}
+                    ),
+                    html.P(
+                        "Enter a drug name below to receive alternative recommendations based on therapeutic effects.",
+                        className="text-center mb-4",
+                        style={'color': '#7f8c8d'}
+                    ),
+                    dbc.Input(
+                        id="drug-input",
+                        type="text",
+                        placeholder="Enter drug name...",
+                        className="mb-3",
+                        style={
+                            'width': '100%',
+                            'margin': '0 auto',
+                            'fontSize': '16px',
+                            'border': '1px solid #bdc3c7',
+                            'borderRadius': '4px',
+                            'padding': '10px'
+                        }
+                    ),
+                    html.Div(
+                        id="output-container",
+                        className="mb-2 text-center",
+                        style={'color': '#e74c3c'}
+                    ),
+                    html.H3(
+                        "Suggested Alternative Drugs",
+                        className="text-center mb-3",
+                        style={'color': '#2c3e50'}
+                    ),
+                    html.Div(
+                        id="recommended-drugs",
+                        className="mb-4 d-flex justify-content-center flex-wrap",
+                        style={'gap': '10px'}
+                    ),
+                    dbc.Row(
+                        className="mt-4",
+                        style={'flexWrap': 'nowrap'},
+                        children=[
+                            dbc.Col(
+                                width=6,
+                                children=[
+                                    html.H3(
+                                        "Therapeutic Effects",
+                                        className="text-center mb-3",
+                                        style={'color': '#2980b9'}
+                                    ),
+                                    html.Div(
+                                        id="therapeutic-effects",
+                                        className="p-3",
+                                        style={
+                                            'backgroundColor': '#d6eaf8',
+                                            'borderRadius': '4px',
+                                            'minHeight': '100px',
+                                            'boxShadow': '0 4px 8px rgba(0,0,0,0.1)'
+                                        }
+                                    )
+                                ]
+                            ),
+                            dbc.Col(
+                                width=6,
+                                children=[
+                                    html.H3(
+                                        "Side Effects",
+                                        className="text-center mb-3",
+                                        style={'color': '#c0392b'}
+                                    ),
+                                    html.Div(
+                                        id="side-effects",
+                                        className="p-3",
+                                        style={
+                                            'backgroundColor': '#fadbd8',
+                                            'borderRadius': '4px',
+                                            'minHeight': '100px',
+                                            'boxShadow': '0 4px 8px rgba(0,0,0,0.1)'
+                                        }
+                                    )
+                                ]
+                            )
+                        ]
+                    )
+                ]
+            )
+        ]
+    )

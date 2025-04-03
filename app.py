@@ -1,76 +1,71 @@
 import dash
-from dash import html, dcc, callback_context
-from dash.dependencies import Input, Output, State
-import layout  # Import layout module
-from recommender import get_alternative_drugs  # Import recommender function
+from dash import html, callback_context, no_update
+from dash.dependencies import Input, Output, State, ALL
+import dash_bootstrap_components as dbc
+import layout
+from recommender import get_alternative_drugs
 import pandas as pd
+import json
 
-# Load the dataset
 df = pd.read_csv("data/drugs.csv")
+df["Drug"] = df["Drug"].str.lower()
 
-# Initialize Dash app
-app = dash.Dash(__name__)
-server = app.server  # Required for Render deployment
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 app.layout = layout.create_layout()
 
-# Callback to update suggestions based on user input
-@app.callback(
-    Output("suggestions-dropdown", "options"),
-    Input("drug-input", "value")
-)
-def update_suggestions(input_value):
-    if not input_value:
-        return []
-    suggestions = df[df['Drug'].str.contains(input_value, case=False, na=False)]['Drug'].unique()
-    return [{"label": drug, "value": drug} for drug in suggestions]
-
-# Callback to update input field when a suggestion is selected
-@app.callback(
-    Output("drug-input", "value"),
-    Input("suggestions-dropdown", "value")
-)
-def update_input(selected_suggestion):
-    return selected_suggestion if selected_suggestion else ""
-
-# Callback to update recommendations and drug details
+# Callback for recommendations and details
 @app.callback(
     [Output("output-container", "children"),
+     Output("recommended-drugs", "children"),
      Output("therapeutic-effects", "children"),
      Output("side-effects", "children")],
     Input("drug-input", "value")
 )
-def update_recommendations_and_details(drug_name):
+def update_recommendations(drug_name):
     if not drug_name:
-        return "Please enter a drug name.", "No details available.", "No details available."
+        return "Please enter a drug name.", [], "No details available.", "No details available."
     
-    recommendations = get_alternative_drugs(drug_name, criteria="therapeutic effects")
-    if recommendations and recommendations[0] == "Drug not found in database.":
-        return "Drug not found in database.", "No details available.", "No details available."
+    drug_lower = drug_name.lower()
+    recommendations = get_alternative_drugs(drug_lower, "therapeutic effects")
     
-    recommendation_links = [html.A(drug, href="#", id={"type": "rec-link", "index": drug}, style={"cursor": "pointer", "color": "blue", "textDecoration": "underline"}) for drug in recommendations]
-    recommendation_list = [html.Li(link) for link in recommendation_links]
+    if not recommendations or recommendations[0] == "Drug not found in database.":
+        return "Drug not found in database.", [], "No details available.", "No details available."
     
-    drug_row = df[df["Drug"] == drug_name].iloc[0]
-    therapeutic = f"Therapeutic Class: {drug_row['Therapeutic Class']}"
-    side = f"Side Effects: {drug_row['Side Effects']}"
+    # Create buttons for recommendations
+    buttons = [
+        dbc.Button(
+            drug,
+            id={'type': 'recommendation-button', 'index': drug},
+            className="m-1",
+            color="primary"
+        ) for drug in recommendations
+    ]
     
-    return html.Ul(recommendation_list), therapeutic, side
+    # Get drug details
+    drug_row = df[df["Drug"] == drug_lower]
+    if drug_row.empty:
+        return "Drug not found in database.", [], "No details available.", "No details available."
+    
+    drug_data = drug_row.iloc[0]
+    therapeutic = f"Therapeutic Class: {drug_data.get('Therapeutic Class', 'N/A')}"
+    side_effects = f"Side Effects: {drug_data.get('Side Effects', 'N/A')}"
+    
+    return "", buttons, therapeutic, side_effects
 
-# Callback to handle clicks on recommendation links
+# Callback to update input when recommendation buttons are clicked
 @app.callback(
     Output("drug-input", "value"),
-    Input("output-container", "children"),
-    State("drug-input", "value")
+    Input({'type': 'recommendation-button', 'index': ALL}, 'n_clicks'),
+    prevent_initial_call=True
 )
-def on_recommendation_click(children, current_input):
+def update_input(n_clicks):
     ctx = callback_context
     if not ctx.triggered:
-        return current_input
-    
-    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    if "rec-link" in trigger_id:
-        return trigger_id["index"]
-    return current_input
+        return no_update
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    drug_name = json.loads(button_id)['index']
+    return drug_name
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)
