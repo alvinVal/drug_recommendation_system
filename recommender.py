@@ -1,7 +1,7 @@
 # placeholder for recommender system
 import pandas as pd
 
-# Load drug dataset (Assume a CSV file exists in 'data/drugs.csv')
+# Load drug dataset, sample file is in data/drugs.csv
 df = pd.read_csv("data/drugs.csv")
 
 def get_alternative_drugs(drug_name, criteria="therapeutic effects"):
