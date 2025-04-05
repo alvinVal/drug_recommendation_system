@@ -1,4 +1,4 @@
 dash
 dash-bootstrap-components
 pandas
-sklearn
+scikit-learn
