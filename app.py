@@ -1,141 +1,167 @@
-import dash
-from dash import html, dcc, callback_context, no_update
+from dash import Dash, html, dcc, callback_context, no_update
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, ALL
 import layout
-from recommender import get_alternative_drugs, get_drug_side_effects
+from recommender import get_alternative_drugs, get_drug_details, get_price_range
 import pandas as pd
-import math
-import json
 
-# Load the dataset
-df = pd.read_csv("data/drugs.csv")
-df["Drug Name"] = df["Drug Name"].str.lower()
-
-# Initialize the app with additional CSS for smoother transitions
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
-
-# Enable loading states
-app.config.suppress_callback_exceptions = True
-
 app.layout = layout.create_layout()
 
-# Callback to update drug info and initialize filters
 @app.callback(
     [Output("output-container", "children"),
-     Output("therapeutic-effects", "children"),
+     Output("therapeutic-class", "children"),
+     Output("chemical-action-class", "children"),
+     Output("therapeutic-uses", "children"),
      Output("side-effects", "children"),
      Output("side-effects-checklist", "options"),
      Output("price-range-slider", "min"),
      Output("price-range-slider", "max"),
      Output("price-range-slider", "marks"),
-     Output("current-drug-price", "children")],
-    Input("drug-input", "value"),
-    prevent_initial_call=True
-)
-def update_drug_info(drug_name):
-    if not drug_name:
-        return ["Please enter a drug name.", "No details available.", "No details available.", [], 
-                0, 2000, {0: '0', 500: '500', 1000: '1000', 1500: '1500', 2000: '2000'}, ""]
-
-    drug_lower = drug_name.lower()
-    side_effects = get_drug_side_effects(drug_lower)
-    side_effect_options = [{'label': effect, 'value': effect} for effect in side_effects]
-    
-    # Get price range for recommendations
-    recommendations = get_alternative_drugs(drug_lower, criteria="therapeutic effects")
-    min_price, max_price = 0, 2000
-    marks = {0: '0', 500: '500', 1000: '1000', 1500: '1500', 2000: '2000'}
-    
-    if recommendations and recommendations[0] != "Drug not found in database.":
-        recommended_drugs = df[df["Drug Name"].isin([drug.lower() for drug in recommendations])]
-        if not recommended_drugs.empty:
-            min_price = math.floor(recommended_drugs['Price'].min())
-            max_price = math.ceil(recommended_drugs['Price'].max())
-            if min_price == max_price:
-                max_price += 100
-            step = (max_price - min_price) / 4
-            marks = {
-                int(min_price + i*step): str(int(min_price + i*step))
-                for i in range(5)
-            }
-
-    # Get drug details and price
-    drug_row = df[df["Drug Name"] == drug_lower]
-    if drug_row.empty:
-        return ["Drug not found in database.", "No details available.", "No details available.", 
-                side_effect_options, min_price, max_price, marks, "Drug Price: Not available"]
-    
-    drug_data = drug_row.iloc[0]
-    therapeutic = f"Therapeutic Class: {drug_data.get('Therapeutic Class', 'N/A')}"
-    side_effects_text = "Side Effects: " + ", ".join([str(effect) for effect in side_effects if effect])
-    price_display = html.Span([
-        "Drug Price: ",
-        html.Span(
-            f"₱{drug_data['Price']:,.2f}",
-            style={'color': 'darkred', 'fontWeight': 'bolder', 'fontSize': '1.2rem'}
-        )
-    ])
-    
-    return ["", therapeutic, side_effects_text, side_effect_options, 
-            min_price, max_price, marks, price_display]
-
-# Callback to update recommendations based on filters
-@app.callback(
-    Output("recommended-drugs", "children"),
+     Output("current-drug-price", "children"),
+     Output("recommended-drugs", "children")],
     [Input("drug-input", "value"),
      Input("side-effects-checklist", "value"),
-     Input("price-range-slider", "value")],
+     Input("price-range-slider", "value"),
+     Input("price-filter-toggle", "value")],
     prevent_initial_call=True
 )
-def update_recommendations(drug_name, selected_side_effects, price_range):
+def update_all(drug_name, excluded_effects, price_range, price_filter_enabled):
+    # Price range setup
+    price_min, price_max = get_price_range()
+    price_min = int(float(price_min))
+    price_max = int(float(price_max))
+    step_size = max(1, (price_max - price_min) // 4)
+    marks = {i: str(i) for i in range(price_min, price_max + 1, step_size)}
+
     if not drug_name:
-        return []
+        return ["Please enter a drug name.", "No data", "No data", "No data", "No data", [],
+                price_min, price_max, marks, "", []]
+
+    drug_details = get_drug_details(drug_name.lower().strip())
+    if drug_details is None:
+        return ["Drug not found", "No data", "No data", "No data", "No data", [],
+                price_min, price_max, marks, "Price info not available", []]
+
+    # Process drug details
+    therapeutic_class = (drug_details['Therapeutic Class'] 
+                         if pd.notna(drug_details['Therapeutic Class'])
+                         else "N/A")
     
-    recommendations = get_alternative_drugs(
-        drug_name.lower(),
-        criteria="therapeutic effects",
-        selected_side_effects=selected_side_effects,
-        price_range=price_range
+    chemical_class = (drug_details['Chemical Class'] 
+                      if pd.notna(drug_details['Chemical Class']) 
+                      else "N/A")
+    action_class = (drug_details['Action Class'] 
+                    if pd.notna(drug_details['Action Class']) 
+                    else "N/A")
+    chem_action = html.Div([
+        html.P(f"Chemical: {chemical_class}"),
+        html.P(f"Action: {action_class}")
+    ])
+    
+    therapeutic_uses = (drug_details['uses_features'] 
+                        if pd.notna(drug_details['uses_features']) 
+                        else "N/A")
+    
+    side_effects = (drug_details['side_effect_features'] 
+                    if pd.notna(drug_details['side_effect_features']) 
+                    else "N/A")
+    effects = [e.strip() for e in str(side_effects).split(',') if e.strip()]
+    side_effect_options = [{'label': eff, 'value': eff} for eff in effects]
+    
+    # Price display with red text
+    price = drug_details['Price']
+    price_display = (
+        "Price information not available" 
+        if price == -1 
+        else html.Span([
+            "Price: ",
+            html.Span(
+                f"₱{price:,.2f}",
+                style={'color': 'red', 'fontWeight': 'bolder', 'fontSize': '1.2rem'}
+            )
+        ])
     )
+
+    # Recommendations using the provided filters
+    active_price_range = price_range if price_filter_enabled else None
+    recommendations = get_alternative_drugs(drug_name, active_price_range, excluded_effects)
     
-    if not recommendations or recommendations[0] == "Drug not found in database.":
-        return [html.Div("No alternatives found with these filters.", className="text-center")]
-    
+    if not recommendations:
+        # If no recommendations and price filter is enabled, suggest turning it off.
+        if price_filter_enabled:
+            rec_children = [html.Div("No alternatives found with these filters. Consider turning off the price filter to see more options.", className="text-center")]
+        else:
+            rec_children = [html.Div("No alternatives found with these filters.", className="text-center")]
+    else:
+        rec_children = []
+        for drug, similarity in recommendations:
+            if drug.lower() == drug_name.lower():
+                continue
+            rec_children.append(
+                dbc.Button(
+                    drug.capitalize(),
+                    id={'type': 'recommendation-button', 'index': drug},
+                    className="m-1",
+                    color="primary",
+                    n_clicks=0,
+                )
+            )
+            rec_children.append(
+                dbc.Tooltip(
+                    f"Similarity: {similarity:.2f}",
+                    target={'type': 'recommendation-button', 'index': drug},
+                )
+            )
+
     return [
-        dbc.Button(
-            drug.capitalize(),
-            id={'type': 'recommendation-button', 'index': drug},
-            className="m-1",
-            color="primary",
-            n_clicks=0
-        ) for drug in recommendations
+        "",
+        therapeutic_class,
+        chem_action,
+        therapeutic_uses,
+        ", ".join(effects) if effects else "No side effects reported",
+        side_effect_options,
+        price_min,
+        price_max,
+        marks,
+        price_display,
+        rec_children
     ]
 
-# Callback to maintain checkbox state
 @app.callback(
-    Output("side-effects-checklist", "value"),
-    Input("side-effects-checklist", "options"),
-    prevent_initial_call=True
+    [Output("price-range-slider", "disabled"),
+     Output("price-filter-col", "style")],
+    [Input("price-filter-toggle", "value")]
 )
-def maintain_checkbox_state(options):
-    return [option['value'] for option in options] if options else []
+def toggle_price_filter(enable_filter):
+    if not enable_filter:
+        return True, {'opacity': 0.5}  # Only visually dim the slider
+    return False, {'opacity': 1}
 
-# Callback to handle recommendation button clicks
 @app.callback(
     Output("drug-input", "value"),
     [Input({'type': 'recommendation-button', 'index': ALL}, 'n_clicks')],
-    [State({'type': 'recommendation-button', 'index': ALL}, 'id')],
-    prevent_initial_call=True
+    [State({'type': 'recommendation-button', 'index': ALL}, "id")]
 )
 def update_input(n_clicks, button_ids):
     ctx = callback_context
     if not ctx.triggered:
         return no_update
     
-    clicked_index = next((i for i, n in enumerate(n_clicks) if n is not None and n > 0), None)
-    return button_ids[clicked_index]['index'] if clicked_index is not None else no_update
+    clicked_idx = next((i for i, n in enumerate(n_clicks) if n), None)
+    return button_ids[clicked_idx]['index'] if clicked_idx is not None else no_update
+
+# New callback to toggle visibility of the entire results section (suggestions, filters, drug info)
+@app.callback(
+    Output("results-section", "style"),
+    [Input("drug-input", "value")]
+)
+def toggle_results_section(drug_name):
+    if drug_name and (get_drug_details(drug_name.lower().strip()) is not None):
+         return {"display": "block"}
+    else:
+         return {"display": "none"}
 
 if __name__ == "__main__":
     app.run(debug=True)
