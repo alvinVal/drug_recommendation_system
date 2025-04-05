@@ -1,62 +1,77 @@
 import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-# Load the dataset
+# Load and preprocess data
 df = pd.read_csv("data/drugs.csv")
-df["Drug Name"] = df["Drug Name"].astype(str).str.lower()
+df['name'] = df['name'].str.lower().str.strip()
+df['uses_features'] = df['uses_features'].fillna('').astype(str)
+df['side_effect_features'] = df['side_effect_features'].fillna('').astype(str)
 
-def get_alternative_drugs(drug_name, criteria="therapeutic effects", selected_side_effects=None, price_range=None):
-    """Returns a list of alternative drugs based on the given criteria."""
-    
-    drug_name = drug_name.lower()
-    if drug_name not in df["Drug Name"].values:
-        return ["Drug not found in database."]
+# Create TF-IDF matrix
+tfidf = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
+tfidf_matrix = tfidf.fit_transform(df['uses_features'] + ' ' + df['side_effect_features'])
+cosine_sim = cosine_similarity(tfidf_matrix)
 
-    drug_row = df[df["Drug Name"] == drug_name].iloc[0]
+def get_drug_details(drug_name):
+    """Get detailed information for a specific drug (exact match only)"""
+    try:
+        drug_name = drug_name.lower().strip()
+        exact_match = df[df['name'] == drug_name]
+        if not exact_match.empty:
+            return exact_match.iloc[0]
+        return None
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return None
 
-    if criteria == "therapeutic effects":
-        key = "Therapeutic Class"
-    elif criteria == "side effects":
-        key = "Side Effects"
-    else:
-        return ["Invalid criteria."]
-
-    if pd.isna(drug_row[key]):
-        return ["No alternatives found based on this criterion."]
-
-    # Get base recommendations
-    similar_drugs = df[df[key] == drug_row[key]].copy()
-    
-    # Filter by selected side effects if any
-    if selected_side_effects:
-        side_effect_cols = [col for col in df.columns if col.startswith('SideEffect')]
-        mask = similar_drugs[side_effect_cols].apply(
-            lambda row: not any(str(effect).lower() in [str(x).lower() for x in row.values if x] 
-                        for effect in selected_side_effects), 
-            axis=1
-        )
-        similar_drugs = similar_drugs[mask]
-    
-    # Filter by price range if specified
-    if price_range:
-        min_price, max_price = price_range
-        similar_drugs = similar_drugs[
-            (similar_drugs['Price'] >= min_price) & 
-            (similar_drugs['Price'] <= max_price)
-        ]
-    
-    # Remove the queried drug and format results
-    similar_drugs = similar_drugs[similar_drugs['Drug Name'] != drug_name]
-    results = similar_drugs['Drug Name'].unique().tolist()
-    
-    return results if results else ["No alternatives found."]
-
-def get_drug_side_effects(drug_name):
-    """Returns a list of side effects for a given drug"""
-    drug_name = drug_name.lower()
-    if drug_name not in df["Drug Name"].values:
+def get_alternative_drugs(drug_name, price_range=None, excluded_side_effects=None):
+    """Get recommendations with dynamic filtering. If filters yield no results,
+    fallback to the top 3 alternatives based solely on cosine similarity."""
+    try:
+        drug_name = drug_name.lower().strip()
+        idx = df[df['name'] == drug_name].index[0]
+        sim_scores = list(enumerate(cosine_sim[idx]))
+        sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+        
+        # Get top 50 candidates (excluding self)
+        top_indices = [i[0] for i in sim_scores[1:51]]
+        recommendations = df.iloc[top_indices].copy()
+        recommendations['similarity'] = [i[1] for i in sim_scores[1:51]]
+        
+        # Apply price filter if enabled
+        if price_range:
+            min_price, max_price = price_range
+            recommendations = recommendations[
+                (recommendations['Price'] >= min_price) & 
+                (recommendations['Price'] <= max_price) &
+                (recommendations['Price'] != -1)
+            ]
+        
+        # Apply side effects filter if any are excluded
+        if excluded_side_effects:
+            mask = ~recommendations['side_effect_features'].str.contains(
+                '|'.join(excluded_side_effects), case=False, na=False
+            )
+            recommendations = recommendations[mask]
+        
+        filtered_recs = recommendations[['name', 'similarity']].head(3).values.tolist()
+        if not filtered_recs:
+            # Fallback: return the top 3 alternatives ignoring filters
+            fallback = []
+            for i, sim in sim_scores[1:]:
+                candidate = df.iloc[i]
+                if candidate['name'] != drug_name:
+                    fallback.append([candidate['name'], sim])
+                if len(fallback) == 3:
+                    break
+            return fallback
+        return filtered_recs
+    except Exception as e:
+        print(f"Error: {str(e)}")
         return []
-    
-    drug_row = df[df["Drug Name"] == drug_name].iloc[0]
-    side_effects = [str(effect) for effect in drug_row.filter(like='SideEffect').dropna().unique() 
-                   if effect and str(effect) != 'nan']
-    return side_effects
+
+def get_price_range():
+    """Get min and max price from dataset (excludes -1)"""
+    valid_prices = df[df['Price'] != -1]['Price']
+    return (valid_prices.min(), valid_prices.max()) if not valid_prices.empty else (0, 2000)
